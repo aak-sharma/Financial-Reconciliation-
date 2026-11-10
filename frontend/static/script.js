@@ -4,7 +4,7 @@ let bankFileSelected = false;
 let statusChart = null;
 
 // API Base URL
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 // Tab Navigation
 document.querySelectorAll('.tab-btn').forEach(btn => {
