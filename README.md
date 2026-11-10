@@ -1,4 +1,51 @@
-# Financial Reconciliation Tool — combined local + Databricks project
+# Financial Reconciliation Tool
+
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-2.3-000000?logo=flask&logoColor=white)
+![Databricks](https://img.shields.io/badge/Databricks-Unity%20Catalog%20%7C%20Delta%20%7C%20Spark-FF3621?logo=databricks&logoColor=white)
+![Chart.js](https://img.shields.io/badge/Chart.js-4.6-FF6384?logo=chartdotjs&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-informational)
+
+Automated GL-to-bank reconciliation with a 3-pass mutual-best-match engine,
+behind one Flask app that runs identically against a local SQLite database or
+a full Databricks pipeline (Unity Catalog, Delta Lake, Auto Loader, a Spark
+job) — flip one environment variable, same UI, same API, no code changes.
+
+**Tested at 500,000+ GL rows locally (99.99% precision / 96.6% recall) and
+at 1,000,000 rows on a live Databricks job (98.9% precision / 95.6% recall).**
+
+## Screenshots
+
+| Upload | Dashboard |
+|---|---|
+| ![Upload screen](docs/screenshots/upload.png) | ![Dashboard with reconciliation chart](docs/screenshots/dashboard.png) |
+
+| Matched entries | Exceptions |
+|---|---|
+| ![Matched entries table](docs/screenshots/matches.png) | ![Open exceptions table](docs/screenshots/exceptions.png) |
+
+## Why this exists
+
+The original version was a solid local Flask + SQLite reconciliation tool.
+This build keeps every bit of that working exactly as before, and adds a
+second, swappable backend that runs the same matching logic as a real
+cloud data pipeline — Auto Loader ingestion into Bronze, PySpark cleaning
+into Silver, a 3-pass matcher producing Gold tables, with idempotent Delta
+`MERGE` so re-running the pipeline doesn't lose manually-resolved exceptions.
+It's meant to show both ends: a working product, and the data-engineering
+underneath it.
+
+## Quickstart
+
+```bash
+git clone <this-repo-url>
+cd financial-reconciliation
+./run_local.sh      # SQLite mode, zero config
+```
+Open http://localhost:5000, grab the sample GL/bank CSVs from the Upload
+tab, and click through Upload → Reconcile → Dashboard.
+
+---
 
 One Flask app, two interchangeable backends:
 
