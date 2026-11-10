@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Reconciliation Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+    <!-- Vendored locally (frontend/static/chart.umd.min.js, from the official
+         chart.js npm package) rather than loaded from a CDN: no external
+         runtime dependency, works behind corporate firewalls, and doesn't
+         break if a CDN has an outage. -->
+    <script src="static/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <p class="eyebrow">~/reconciliation-engine</p>
+                <h1>Financial Reconciliation<span class="cursor">_</span></h1>
+                <p class="subtitle">// automated GL-to-bank matching, at scale</p>
+                <span class="backend-indicator" id="backendIndicator"></span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Navigation Tabs -->
+            <nav class="nav-tabs">
+                <button class="tab-btn active" data-tab="upload"><span class="tab-icon">01</span>Upload</button>
+                <button class="tab-btn" data-tab="reconcile"><span class="tab-icon">02</span>Reconcile</button>
+                <button class="tab-btn" data-tab="dashboard"><span class="tab-icon">03</span>Dashboard</button>
+                <button class="tab-btn" data-tab="matches"><span class="tab-icon">04</span>Matched</button>
+                <button class="tab-btn" data-tab="exceptions"><span class="tab-icon">05</span>Exceptions</button>
+            </nav>
+
+            <!-- Upload Tab -->
+            <section id="upload" class="tab-content active">
+                <div class="card">
+                    <h2><span class="step-tag">STEP 1</span>Upload GL &amp; Bank Data</h2>
+
+                    <div class="upload-section">
+                        <h3>General Ledger (GL) Data</h3>
+                        <p class="help-text"><code>date, account_code, description, debit, credit, reference</code></p>
+
+                        <div class="file-upload">
+                            <input type="file" id="glFile" accept=".csv" class="file-input">
+                            <label for="glFile" class="file-label">
+                                <span>Choose GL file <span class="muted">or drag &amp; drop</span></span>
+                            </label>
+                            <div id="glStatus" class="status"></div>
+                        </div>
+
+                        <button id="uploadGLBtn" class="btn btn-primary" disabled>Upload GL Data</button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="upload-section">
+                        <h3>Bank Statement Data</h3>
+                        <p class="help-text"><code>date, amount, description, reference, bank_reference</code></p>
+
+                        <div class="file-upload">
+                            <input type="file" id="bankFile" accept=".csv" class="file-input">
+                            <label for="bankFile" class="file-label">
+                                <span>Choose bank file <span class="muted">or drag &amp; drop</span></span>
+                            </label>
+                            <div id="bankStatus" class="status"></div>
+                        </div>
+
+                        <button id="uploadBankBtn" class="btn btn-primary" disabled>Upload Bank Data</button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="sample-downloads">
+                        <h3>Need sample files?</h3>
+                        <button id="downloadGLSample" class="btn btn-secondary">↓ GL Sample</button>
+                        <button id="downloadBankSample" class="btn btn-secondary">↓ Bank Sample</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reconcile Tab -->
+            <section id="reconcile" class="tab-content">
+                <div class="card">
+                    <h2><span class="step-tag">STEP 2</span>Run Reconciliation</h2>
+
+                    <div class="settings">
+                        <div class="setting-group">
+                            <label for="tolerance">Amount Tolerance (%)</label>
+                            <input type="number" id="tolerance" min="0" max="100" value="1" step="0.01">
+                            <small>Percentage tolerance for amount matching</small>
+                        </div>
+                    </div>
+
+                    <button id="reconcileBtn" class="btn btn-primary btn-large">▶ Run Reconciliation</button>
+
+                    <div id="reconcileStatus" class="status"></div>
+
+                    <div id="reconcileResults" class="results" style="display: none;">
+                        <div class="result-grid">
+                            <div class="result-card">
+                                <div class="result-label">Matched Entries</div>
+                                <div class="result-value" id="matchedCount">0</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">Unmatched GL</div>
+                                <div class="result-value" id="unmatchedGLCount">0</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">Unmatched Bank</div>
+                                <div class="result-value" id="unmatchedBankCount">0</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-label">Match Rate</div>
+                                <div class="result-value" id="matchRate">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Tab -->
+            <section id="dashboard" class="tab-content">
+                <div class="card">
+                    <h2>Dashboard</h2>
+
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">GL Entries</div>
+                            <div class="stat-value" id="statGLEntries">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Bank Entries</div>
+                            <div class="stat-value" id="statBankEntries">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Matched</div>
+                            <div class="stat-value" id="statMatched">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Open Exceptions</div>
+                            <div class="stat-value exception" id="statExceptions">0</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>Reconciliation Status</h3>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button id="exportBtn" class="btn btn-secondary">↓ Export Report (.xlsx)</button>
+                        <button id="refreshBtn" class="btn btn-secondary">⟳ Refresh</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Matches Tab -->
+            <section id="matches" class="tab-content">
+                <div class="card">
+                    <h2>Matched Entries</h2>
+
+                    <div class="table-container">
+                        <table id="matchesTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Match Type</th>
+                                    <th>Confidence</th>
+                                    <th>GL Date</th>
+                                    <th>Bank Date</th>
+                                    <th>GL Amount</th>
+                                    <th>Bank Amount</th>
+                                    <th>Variance</th>
+                                    <th>GL Description</th>
+                                    <th>Bank Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matchesTbody">
+                                <tr class="empty">
+                                    <td colspan="9">No matched entries yet. Run reconciliation first.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Exceptions Tab -->
+            <section id="exceptions" class="tab-content">
+                <div class="card">
+                    <h2>Unmatched Entries (Exceptions)</h2>
+
+                    <div class="table-container">
+                        <table id="exceptionsTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Exception</th>
+                                    <th>Amount</th>
+                                    <th>Description</th>
+                                    <th>Created</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="exceptionsTbody">
+                                <tr class="empty">
+                                    <td colspan="7">No exceptions. All entries matched!</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="static/script.js"></script>
+</body>
+</html>

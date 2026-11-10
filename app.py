@@ -21,7 +21,7 @@ if BACKEND_NAME == 'databricks':
 else:
     import sqlite_backend as backend
 
-app = Flask(__name__, template_folder='../frontend', static_folder='../frontend/static')
+app = Flask(__name__, template_folder='frontend', static_folder='frontend/static')
 CORS(app)
 
 # The public deployment runs with RECON_BACKEND=databricks and no login wall --
