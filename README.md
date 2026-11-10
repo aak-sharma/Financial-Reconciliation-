@@ -14,16 +14,6 @@ job) — flip one environment variable, same UI, same API, no code changes.
 **Tested at 500,000+ GL rows locally (99.99% precision / 96.6% recall) and
 at 1,000,000 rows on a live Databricks job (98.9% precision / 95.6% recall).**
 
-## Screenshots
-
-| Upload | Dashboard |
-|---|---|
-| ![Upload screen](docs/screenshots/upload.png) | ![Dashboard with reconciliation chart](docs/screenshots/dashboard.png) |
-
-| Matched entries | Exceptions |
-|---|---|
-| ![Matched entries table](docs/screenshots/matches.png) | ![Open exceptions table](docs/screenshots/exceptions.png) |
-
 ## Why this exists
 
 The original version was a solid local Flask + SQLite reconciliation tool.
